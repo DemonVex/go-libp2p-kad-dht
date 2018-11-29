@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
+	pb "github.com/DemonVex/go-libp2p-kad-dht/pb"
+
 	cid "github.com/ipfs/go-cid"
 	u "github.com/ipfs/go-ipfs-util"
 	logging "github.com/ipfs/go-log"
-	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
 	kb "github.com/libp2p/go-libp2p-kbucket"
 	inet "github.com/libp2p/go-libp2p-net"
 	peer "github.com/libp2p/go-libp2p-peer"
