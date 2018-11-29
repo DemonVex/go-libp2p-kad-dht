@@ -10,7 +10,6 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	cid "github.com/ipfs/go-cid"
 	ds "github.com/ipfs/go-datastore"
-	autobatch "github.com/ipfs/go-datastore/autobatch"
 	dsq "github.com/ipfs/go-datastore/query"
 	logging "github.com/ipfs/go-log"
 	goprocess "github.com/jbenet/goprocess"
@@ -61,7 +60,7 @@ func NewProviderManager(ctx context.Context, local peer.ID, dstore ds.Batching) 
 	pm := new(ProviderManager)
 	pm.getprovs = make(chan *getProv)
 	pm.newprovs = make(chan *addProv)
-	pm.dstore = autobatch.NewAutoBatching(dstore, batchBufferSize)
+	pm.dstore = dstore
 	cache, err := lru.New(lruCacheSize)
 	if err != nil {
 		panic(err) //only happens if negative value is passed to lru constructor
@@ -288,12 +287,13 @@ func (pm *ProviderManager) run() {
 					}
 				}
 				// have we run out of providers?
+				// FIXME It causes deadlocks, when we try to delete something while a read only tx still active
 				if len(provs.set) == 0 {
 					provs.providers = nil
-					err := pm.deleteProvSet(k)
+					/* err := pm.deleteProvSet(k)
 					if err != nil {
 						log.Error("error deleting provider set: ", err)
-					}
+					}*/
 				} else if len(provs.set) < len(provs.providers) {
 					// We must have modified the providers set, recompute.
 					provs.providers = make([]peer.ID, 0, len(provs.set))
