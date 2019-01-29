@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/DemonVex/go-libp2p-kad-dht/pb"
+	pb "github.com/avbasov/go-libp2p-kad-dht/pb"
 
 	cid "github.com/ipfs/go-cid"
 	u "github.com/ipfs/go-ipfs-util"

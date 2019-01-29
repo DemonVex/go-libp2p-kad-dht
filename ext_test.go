@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/DemonVex/go-libp2p-kad-dht/pb"
+	pb "github.com/avbasov/go-libp2p-kad-dht/pb"
 
 	ggio "github.com/gogo/protobuf/io"
 	u "github.com/ipfs/go-ipfs-util"

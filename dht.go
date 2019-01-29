@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	opts "github.com/DemonVex/go-libp2p-kad-dht/opts"
-	pb "github.com/DemonVex/go-libp2p-kad-dht/pb"
-	providers "github.com/DemonVex/go-libp2p-kad-dht/providers"
+	opts "github.com/avbasov/go-libp2p-kad-dht/opts"
+	pb "github.com/avbasov/go-libp2p-kad-dht/pb"
+	providers "github.com/avbasov/go-libp2p-kad-dht/providers"
 
 	proto "github.com/gogo/protobuf/proto"
 	cid "github.com/ipfs/go-cid"

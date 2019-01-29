@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/DemonVex/go-libp2p-kad-dht/pb"
+	pb "github.com/avbasov/go-libp2p-kad-dht/pb"
 
 	proto "github.com/gogo/protobuf/proto"
 	cid "github.com/ipfs/go-cid"
