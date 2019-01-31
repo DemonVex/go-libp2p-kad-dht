@@ -570,7 +570,7 @@ func waitForWellFormedTables(t *testing.T, dhts []*IpfsDHT, minPeers, avgPeers i
 			rtlen := dht.routingTable.Size()
 			totalPeers += rtlen
 			if minPeers > 0 && rtlen < minPeers {
-				t.Logf("routing table for %s only has %d peers (should have >%d)", dht.self, rtlen, minPeers)
+				//t.Logf("routing table for %s only has %d peers (should have >%d)", dht.self, rtlen, minPeers)
 				return false
 			}
 		}
@@ -608,7 +608,6 @@ func printRoutingTables(dhts []*IpfsDHT) {
 }
 
 func TestBootstrap(t *testing.T) {
-	// t.Skip("skipping test to debug another")
 	if testing.Short() {
 		t.SkipNow()
 	}
@@ -659,7 +658,6 @@ func TestBootstrap(t *testing.T) {
 }
 
 func TestPeriodicBootstrap(t *testing.T) {
-	// t.Skip("skipping test to debug another")
 	if ci.IsRunning() {
 		t.Skip("skipping on CI. highly timing dependent")
 	}
@@ -679,22 +677,9 @@ func TestPeriodicBootstrap(t *testing.T) {
 		}
 	}()
 
-	signals := []chan time.Time{}
-
 	var cfg BootstrapConfig
 	cfg = DefaultBootstrapConfig
 	cfg.Queries = 5
-
-	// kick off periodic bootstrappers with instrumented signals.
-	for _, dht := range dhts {
-		s := make(chan time.Time)
-		signals = append(signals, s)
-		proc, err := dht.BootstrapOnSignal(cfg, s)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer proc.Close()
-	}
 
 	t.Logf("dhts are not connected. %d", nDHTs)
 	for _, dht := range dhts {
@@ -721,9 +706,8 @@ func TestPeriodicBootstrap(t *testing.T) {
 	}
 
 	t.Logf("bootstrapping them so they find each other. %d", nDHTs)
-	now := time.Now()
-	for _, signal := range signals {
-		go func(s chan time.Time) { s <- now }(signal)
+	for _, dht := range dhts {
+		go dht.BootstrapOnce(ctx, cfg)
 	}
 
 	// this is async, and we dont know when it's finished with one cycle, so keep checking

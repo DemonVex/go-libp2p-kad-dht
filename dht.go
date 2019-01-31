@@ -1,5 +1,3 @@
-// Package dht implements a distributed hash table that satisfies the ipfs routing
-// interface. This DHT is modeled after kademlia with S/Kademlia modifications.
 package dht
 
 import (
@@ -65,6 +63,16 @@ type IpfsDHT struct {
 
 	protocols []protocol.ID // DHT protocols
 }
+
+// Assert that IPFS assumptions about interfaces aren't broken. These aren't a
+// guarantee, but we can use them to aid refactoring.
+var (
+	_ routing.ContentRouting = (*IpfsDHT)(nil)
+	_ routing.IpfsRouting    = (*IpfsDHT)(nil)
+	_ routing.PeerRouting    = (*IpfsDHT)(nil)
+	_ routing.PubKeyFetcher  = (*IpfsDHT)(nil)
+	_ routing.ValueStore     = (*IpfsDHT)(nil)
+)
 
 // New creates a new DHT with the specified host and options.
 func New(ctx context.Context, h host.Host, options ...opts.Option) (*IpfsDHT, error) {
@@ -368,6 +376,11 @@ func (dht *IpfsDHT) Context() context.Context {
 // Process return dht's process
 func (dht *IpfsDHT) Process() goprocess.Process {
 	return dht.proc
+}
+
+// RoutingTable return dht's routingTable
+func (dht *IpfsDHT) RoutingTable() *kb.RoutingTable {
+	return dht.routingTable
 }
 
 // Close calls Process Close
