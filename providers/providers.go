@@ -248,7 +248,9 @@ func (pm *ProviderManager) getProvKeys() (func() (cid.Cid, bool), error) {
 }
 
 func (pm *ProviderManager) run() {
-	tick := time.NewTicker(pm.cleanupInterval)
+	quickCleanupTicker := time.NewTicker(pm.cleanupInterval)
+	defer quickCleanupTicker.Stop()
+
 	for {
 		select {
 		case np := <-pm.newprovs:
@@ -263,37 +265,33 @@ func (pm *ProviderManager) run() {
 			}
 
 			gp.resp <- provs
-		case <-tick.C:
-			keys, err := pm.getProvKeys()
-			if err != nil {
-				log.Error("Error loading provider keys: ", err)
-				continue
-			}
+		case <-quickCleanupTicker.C:
+			// Quick cleanup keeps providers cache up-to-date
+			// TODO Perform rear full cleanup
+			keys := pm.providers.Keys()
 			now := time.Now()
-			for {
-				k, ok := keys()
+			for _, key := range keys{
+				k := key.(string)
+				cached, ok := pm.providers.Get(k)
 				if !ok {
-					break
-				}
-
-				provs, err := pm.getProvSet(k)
-				if err != nil {
-					log.Error("error loading known provset: ", err)
 					continue
 				}
+				provs := cached.(*providerSet)
+
 				for p, t := range provs.set {
 					if now.Sub(t) > ProvideValidity {
 						delete(provs.set, p)
 					}
 				}
 				// have we run out of providers?
-				// FIXME It causes deadlocks, when we try to delete something while a read only tx still active
 				if len(provs.set) == 0 {
 					provs.providers = nil
-					/* err := pm.deleteProvSet(k)
+
+					cID, _ := cid.Parse([]byte(k))
+					err := pm.deleteProvSet(cID)
 					if err != nil {
 						log.Error("error deleting provider set: ", err)
-					}*/
+					}
 				} else if len(provs.set) < len(provs.providers) {
 					// We must have modified the providers set, recompute.
 					provs.providers = make([]peer.ID, 0, len(provs.set))
@@ -303,7 +301,6 @@ func (pm *ProviderManager) run() {
 				}
 			}
 		case <-pm.proc.Closing():
-			tick.Stop()
 			return
 		}
 	}
