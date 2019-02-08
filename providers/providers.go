@@ -116,6 +116,7 @@ func loadProvSet(dstore ds.Datastore, k cid.Cid) (*providerSet, error) {
 		return nil, err
 	}
 
+	now := time.Now()
 	out := newProviderSet()
 	for {
 		e, ok := res.NextSync()
@@ -140,6 +141,11 @@ func loadProvSet(dstore ds.Datastore, k cid.Cid) (*providerSet, error) {
 		t, err := readTimeValue(e.Value)
 		if err != nil {
 			log.Warning("parsing providers record from disk: ", err)
+			continue
+		}
+
+		if now.Sub(t) > ProvideValidity {
+			// FIXME add to del queue
 			continue
 		}
 
