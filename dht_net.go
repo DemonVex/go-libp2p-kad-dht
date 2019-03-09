@@ -112,7 +112,7 @@ func (dht *IpfsDHT) handleNewMessage(s inet.Stream) bool {
 // measure the RTT for latency measurements.
 func (dht *IpfsDHT) sendRequest(ctx context.Context, p peer.ID, pmes *pb.Message) (*pb.Message, error) {
 
-	ms, err := dht.messageSenderForPeer(p)
+	ms, err := dht.messageSenderForPeer(ctx, p)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func (dht *IpfsDHT) sendRequest(ctx context.Context, p peer.ID, pmes *pb.Message
 
 // sendMessage sends out a message
 func (dht *IpfsDHT) sendMessage(ctx context.Context, p peer.ID, pmes *pb.Message) error {
-	ms, err := dht.messageSenderForPeer(p)
+	ms, err := dht.messageSenderForPeer(ctx, p)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (dht *IpfsDHT) updateFromMessage(ctx context.Context, p peer.ID, mes *pb.Me
 	return nil
 }
 
-func (dht *IpfsDHT) messageSenderForPeer(p peer.ID) (*messageSender, error) {
+func (dht *IpfsDHT) messageSenderForPeer(ctx context.Context, p peer.ID) (*messageSender, error) {
 	dht.smlk.Lock()
 	ms, ok := dht.strmap[p]
 	if ok {
@@ -166,7 +166,7 @@ func (dht *IpfsDHT) messageSenderForPeer(p peer.ID) (*messageSender, error) {
 	dht.strmap[p] = ms
 	dht.smlk.Unlock()
 
-	if err := ms.prepOrInvalidate(); err != nil {
+	if err := ms.prepOrInvalidate(ctx); err != nil {
 		dht.smlk.Lock()
 		defer dht.smlk.Unlock()
 
@@ -210,17 +210,17 @@ func (ms *messageSender) invalidate() {
 	}
 }
 
-func (ms *messageSender) prepOrInvalidate() error {
+func (ms *messageSender) prepOrInvalidate(ctx context.Context) error {
 	ms.lk.Lock()
 	defer ms.lk.Unlock()
-	if err := ms.prep(); err != nil {
+	if err := ms.prep(ctx); err != nil {
 		ms.invalidate()
 		return err
 	}
 	return nil
 }
 
-func (ms *messageSender) prep() error {
+func (ms *messageSender) prep(ctx context.Context) error {
 	if ms.invalid {
 		return fmt.Errorf("message sender has been invalidated")
 	}
@@ -228,7 +228,7 @@ func (ms *messageSender) prep() error {
 		return nil
 	}
 
-	nstr, err := ms.dht.host.NewStream(ms.dht.ctx, ms.p, ms.dht.protocols...)
+	nstr, err := ms.dht.host.NewStream(ctx, ms.p, ms.dht.protocols...)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func (ms *messageSender) SendMessage(ctx context.Context, pmes *pb.Message) erro
 	defer ms.lk.Unlock()
 	retry := false
 	for {
-		if err := ms.prep(); err != nil {
+		if err := ms.prep(ctx); err != nil {
 			return err
 		}
 
@@ -286,7 +286,7 @@ func (ms *messageSender) SendRequest(ctx context.Context, pmes *pb.Message) (*pb
 	defer ms.lk.Unlock()
 	retry := false
 	for {
-		if err := ms.prep(); err != nil {
+		if err := ms.prep(ctx); err != nil {
 			return nil, err
 		}
 
